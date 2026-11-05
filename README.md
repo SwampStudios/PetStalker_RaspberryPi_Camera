@@ -1,85 +1,134 @@
 # PetStalker_RaspberryPi_Camera
-Utilize a raspberry pi to use a webcam to watch your pets at home while you are away.
 
+A Wi-Fi pet camera built on a Raspberry Pi Zero 2 W and a USB webcam. You can watch the live stream from your iPhone anywhere (at work, on cellular, etc.). Everything is free: no subscriptions and no cloud service.
 
-Cheapest workable setup for this project (plus off‑site Wi‑Fi‑to‑Wi‑Fi viewing):
-
-Hardware
-
-- Raspberry Pi Zero 2 W
-- Basic UVC‑compatible USB webcam
-- 16 GB Class 10 microSD card
-- 5V 2A micro‑USB power supply
-- Optional: simple mount/tripod
-
-Software on the Pi
-
-- Raspberry Pi OS (Lite is fine), Python 3
-- Flask, OpenCV, numpy, imutils; apt libraries libatlas‑base‑dev, libjasper‑dev, libqtgui4, libqt4‑test, libhdf5‑dev
-- Tailscale (VPN) for secure off‑site access
-
-On your iPhone
-
-- Safari
-- Tailscale app (signed into the same account as the Pi)
-
-Note: The original tutorial targets a Pi 4 with a Pi camera and streams to devices on the same network; the dependencies and Flask setup come from that tutorial and still apply here
-
-. This cheaper configuration is my recommendation based on general Raspberry Pi practice.
-
-
-- Raspberry Pi Zero 2 W: [https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/](https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/)
-- Basic UVC‑compatible USB webcam (Logitech C270): [https://www.amazon.com/s?k=Logitech+C270+webcam](https://www.amazon.com/s?k=Logitech+C270+webcam)
-- 16 GB Class 10 microSD card (SanDisk): [https://www.amazon.com/s?k=SanDisk+16GB+microSD+Class+10](https://www.amazon.com/s?k=SanDisk+16GB+microSD+Class+10)
-- 5V 2A micro‑USB power supply: [https://www.amazon.com/s?k=5V+2A+micro+USB+power+supply](https://www.amazon.com/s?k=5V+2A+micro+USB+power+supply)
-- Simple mount/tripod (Amazon Basics): [https://www.amazon.com/s?k=Amazon+Basics+tripod](https://www.amazon.com/s?k=Amazon+Basics+tripod)
-
-
-To view the Pi’s live stream on your iPhone from another Wi‑Fi network, make the Pi reachable across networks, then open its Flask page in Safari. The tutorial’s setup is local-only (“any device on your network” on port 5000), so use a secure VPN like Tailscale so your iPhone can reach the Pi as if it’s on the same LAN
-
-.
-
-Steps:
-
-- On the Raspberry Pi: install and sign in to Tailscale; start your Flask stream on port 5000 (the tutorial uses 5000)
-
-- On your iPhone: install the Tailscale app, sign in to the same account, then open Safari and go to http://<Pi’s Tailscale IP>:5000.
-- Expect a bit more latency than the ~1–2 seconds noted for local streaming
-
-
-------------
-
-Here’s a concise, updated “requirements” rewrite of the tutorial for off‑site remote viewing (wifi‑to‑wifi) and a Flask webpage that casts the livestream—no webpage code, just what you need.
-
-**Hardware**
-
-- Raspberry Pi 4 (recommended) or 3B+, official 5V 3A USB‑C power supply for Pi 4
-- Raspberry Pi Camera Module (v2 or HQ) or a USB webcam.
-- MicroSD card (32 GB, Class 10).
-- Home Wi‑Fi router with internet access.
-- iPhone (viewer) at your office.
-- Optional: case, heatsinks/fan, tripod/mount
-
-**Software (on the Raspberry Pi)**
-
-- Raspberry Pi OS; enable the camera in raspi-config (Interface Options → Camera)
-- Python 3.
-- Flask (to serve the webpage and stream) running on port 5000 (the original tutorial uses 5000)
-- Camera library: picamera2 (for modern Raspberry Pi OS) or OpenCV; choose one.
-- Tailscale (VPN) for secure off‑site access across networks: install and sign in on the Pi and on your iPhone so your phone can reach the Pi as if it’s on the same LAN, then open the Flask page via the Pi’s Tailscale IP on port 5000
-
-- Optional: systemd service to auto‑start your Flask app on boot.
-
-**Software (on the iPhone)**
-
-- Safari (to view the webpage).
-- Tailscale app, signed into the same tailnet as the Pi.
-
-
+- **Camera software:** motionEye (free, open source, no coding needed)
+- **Remote access:** Tailscale (free Personal plan, no port forwarding)
 
 ---
-Notes
 
-Tailscale is a simple, secure VPN that links your devices into a private “tailnet” so they can reach each other as if they were on the same local network, even when they’re on different Wi‑Fi networks. The tutorial you’re using focuses on streaming to devices on the same network, not off‑site; Tailscale is what lets you view the Pi’s Flask stream from your office without port‑forwarding or extra hardware
+## Hardware
 
-In this project, you install Tailscale on the Raspberry Pi and on your iPhone, sign in to the same account, then open Safari to http://<Pi’s Tailscale IP>:5000 (or its MagicDNS name) to load the Flask webpage. If you’d like, I can walk you through installing it on the Pi and setting it to start automatically at boot.
+| Item | Notes |
+|------|-------|
+| CanaKit Raspberry Pi Zero 2 W kit | Includes the Pi, 2.5A power supply, OTG cable, case, 64 GB microSD card |
+| Logitech C270 webcam | Plugs in through the OTG cable |
+| microSD card reader | Needed if your laptop has no microSD slot |
+| Laptop (Windows) | Used only for setup |
+| iPhone | Used to watch the stream |
+| Home Wi-Fi | Must have a **2.4 GHz** network (the Zero 2 W can't use 5 GHz) |
+
+Not needed: the GPIO header, the mini HDMI adapter, a monitor, or a keyboard.
+
+> ⚠️ The camera has no night vision. Leave a small lamp on if you want to see your pets at night.
+
+---
+
+## Software (all free)
+
+**On the laptop:** Raspberry Pi Imager, plus Terminal/PowerShell (SSH is built into Windows 10/11)
+**On the Pi:** Raspberry Pi OS Lite (64-bit), motionEye, Tailscale
+**On the iPhone:** Tailscale app, Safari
+
+---
+
+## Setup
+
+### 1. Flash the microSD card
+Reflash the card even though it came preloaded, so you get the latest OS with your Wi-Fi and SSH already set up.
+
+1. Install **Raspberry Pi Imager** from raspberrypi.com and insert the card.
+2. Device: **Raspberry Pi Zero 2 W**
+3. OS: **Raspberry Pi OS (other) → Raspberry Pi OS Lite (64-bit)**
+4. Storage: your microSD card
+5. When asked to customize settings, choose **Edit settings** and set:
+   - Hostname: `petcam`
+   - Username and password (write these down)
+   - Wi-Fi name and password (2.4 GHz network)
+   - Services tab: **Enable SSH** (use password authentication)
+6. Click **Write**.
+
+> If Windows asks to format the card afterward, click **Cancel**. Formatting would erase what you just flashed.
+
+### 2. Connect the hardware
+- Put the card in the Pi and close the case.
+- Webcam → OTG cable → the micro-USB port labeled **USB** (the one nearer the middle)
+- Power supply → the port labeled **PWR IN** (the one at the edge)
+- Wait 3–5 minutes for the first boot.
+
+### 3. Log in from your laptop
+Open PowerShell and run:
+```
+ssh yourusername@petcam.local
+```
+Type `yes` to accept the fingerprint, then enter your password.
+
+Make sure the Pi sees the webcam:
+```
+ls /dev/video*
+```
+You should see `/dev/video0` (and possibly more). If you see nothing, check that the webcam is in the **USB** port, not PWR IN.
+
+### 4. Update the Pi
+```
+sudo apt update && sudo apt full-upgrade -y
+sudo reboot
+```
+Wait a minute, then SSH back in.
+
+### 5. Install motionEye
+```
+sudo apt install -y --no-install-recommends ca-certificates curl python3 python3-dev python3-pip libcurl4-openssl-dev gcc libssl-dev
+sudo python3 -m pip install --break-system-packages --pre motioneye
+sudo motioneye_init
+```
+This can take 10–20 minutes on the Zero 2 W, so be patient. motionEye now starts on its own every time the Pi boots.
+
+### 6. Set up the camera in motionEye
+1. On your laptop (same Wi-Fi), open `http://petcam.local:8765`.
+2. Log in with username `admin` and **no password**.
+3. Add the camera if it isn't detected automatically: **Add camera → Local V4L2 camera → the C270**.
+4. Settings to change:
+   - **General Settings → Admin password:** set a strong password
+   - **Video Device → Resolution:** `640x480` (smoother on the Zero 2 W)
+   - **Video Device → Frame rate:** `10–15`
+   - Optional: turn on **Motion Detection** and **Movies** to record clips. Set **Preserve Movies** to about 1 week so the card doesn't fill up.
+5. Click **Apply**.
+
+### 7. Install Tailscale on the Pi
+```
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+It prints a login link. Open it on your laptop and sign in, then create a free account if you don't have one.
+
+Next, open the Tailscale admin console at login.tailscale.com, find **petcam**, click **⋯ → Disable key expiry**. Without this, the Pi disconnects after about 6 months.
+
+### 8. Set up the iPhone
+1. Install the **Tailscale** app and sign in with the **same account**.
+2. Turn Tailscale on.
+3. In Safari, go to `http://petcam:8765` and log in.
+4. Bookmark it, or use **Share → Add to Home Screen** to get an app-like icon.
+
+That's it. As long as Tailscale is on, the stream works on any Wi-Fi or on cellular.
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `petcam.local` not found | Wait longer after boot, check that the Wi-Fi is 2.4 GHz, or find the Pi's IP in your router's app |
+| No camera / black image | Webcam must be in the **USB** port, not PWR IN. Run `ls /dev/video*` |
+| Stream is choppy | Lower the resolution or frame rate in motionEye |
+| Can't connect from work | Make sure Tailscale is on in the iPhone app and the Pi shows "Connected" in the admin console |
+| Pi randomly reboots | Use the CanaKit 2.5A supply, not a phone charger |
+
+---
+
+## Optional: Flask instead of motionEye
+If you'd rather write your own stream page in Python:
+```
+sudo apt install -y python3-flask python3-opencv
+```
+Don't install OpenCV with `pip` on the Zero 2 W. Run your Flask app on port 5000 and view it at `http://petcam:5000` through Tailscale. Use a systemd service to make it start on boot.
